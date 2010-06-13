@@ -13,6 +13,7 @@ SRCS=$(shell find $(1) -type f -name '*.c')
 OBJS=$(patsubst %.c,%.o,$(call SRCS,$(1)))
 DEPS=$(patsubst %.c,.deps/%.d,$(call SRCS,$(1)))
 
+PRJ_SRC = $(call OBJS,src) lib/libmingw-patch.a ntk/lkl.o
 
 INC=include/asm include/asm-generic include/x86 include/linux
 CFLAGS=-Iinclude -D_WIN32_WINNT=0x0500 -Wall -Wno-multichar
@@ -46,25 +47,19 @@ include/linux:
 	-$(MKDIR) `dirname $@` && \
 	cp $< $@
 
-%/vmlinux: %/.config
+%/lkl.o: %/.config
 	cd $(LKL_SOURCE) && \
 	$(MAKE) O=$(HERE)/$* ARCH=lkl \
 	CROSS_COMPILE=$($*_CROSS) \
 	EXTRA_CFLAGS="$($*_EXTRA_CFLAGS) $(CFLAGS)" \
-	vmlinux
+	lkl.o
 
-%/lkl.a: %/.config
-	cd $(LKL_SOURCE) && \
-	$(MAKE) O=$(HERE)/$* ARCH=lkl \
-	CROSS_COMPILE=$($*_CROSS) \
-	EXTRA_CFLAGS="$($*_EXTRA_CFLAGS) $(CFLAGS)" \
-	lkl.a
-
+ntk.def: ntk/lkl.o
+	$(CC) $(ntk_LD_FLAGS) -static -Wl,--output-def,ntk.def,--out-implib,ntk.a
 
 lib/%.a: lib/%.def
 	$(DLLTOOL) --as=$(AS) -k --output-lib $@ --def $^
 
-PRJ_SRC = $(call OBJS,src) lib/libmingw-patch.a ntk/vmlinux ntk/lkl.a
 
 $(PRJ_NAME).sys: $(INC) $(PRJ_SRC)
 	$(CC) -Wall -s \
@@ -74,7 +69,7 @@ $(PRJ_NAME).sys: $(INC) $(PRJ_SRC)
 	-shared -o $@
 
 force:
-	rm -f ntk/lkl.a
+	rm -f ntk/lkl.o
 	make all
 	mv drvpoc.sys /home/gringo/smbshare/
 
@@ -103,5 +98,8 @@ TAGS-all: $(call SRCS,src) Makefile include/*.h
 	$(CC) $(CFLAGS) -MM -MT $(patsubst %.c,%.o,$<) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
+
+dist.zip: ntk/lkl.o include/ lib/
+	apack -a $@ $^
 
 include $(call DEPS,src)

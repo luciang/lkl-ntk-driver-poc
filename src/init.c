@@ -1,8 +1,21 @@
-#include <ddk/ntddk.h>
-#include <asm/env.h>
+#ifdef _MSC_VER
+# include <ntddk.h>
+/* Microsoft's compiler does not define DDKAPI, but Mingw does not
+ * produce correct code without it (Mingw uses a different calling
+ * convention than the one expected by the Windows kernel; DDKAPI
+ * makes it use __stdcall calling convention). Microsoft's compiler
+ * gets it right by default.*/
+ #define DDKAPI
+ extern int __stdcall lkl_env_init(int);
+ extern int __stdcall lkl_env_fini(void);
+ DRIVER_UNLOAD     DriverUnload;
+ DRIVER_INITIALIZE DriverEntry;
+#else
+# include <ddk/ntddk.h>
+# include <asm/env.h>
+#endif
 
 const int LKL_MEMORY_SIZE = 64 * 1024 * 1024;
-extern int lkl_env_fini(void);
 
 static void stop(void)
 {
