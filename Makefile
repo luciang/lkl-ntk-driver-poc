@@ -68,7 +68,7 @@ PRJ_SRC = $(call OBJS,src) lib/libmingw-patch.a ntk/vmlinux ntk/lkl.a
 
 $(PRJ_NAME).sys: $(INC) $(PRJ_SRC)
 	$(CC) -Wall -s \
-	$(PRJ_SRC) /usr/lib/gcc/i586-mingw32msvc/4.2.1-sjlj/libgcc.a \
+	$(PRJ_SRC) /usr/lib/gcc/i586-mingw32msvc/4.4.2/libgcc.a \
 	-Wl,--subsystem,native -Wl,--entry,_DriverEntry@8 \
 	-nostartfiles -Llib -lmingw-patch -lntoskrnl -lhal -nostdlib \
 	-shared -o $@
